@@ -1,0 +1,103 @@
+---
+name: Pipeline CI
+
+# Requisito da Tarefa 06: executar a cada novo push na branch principal.
+# O pull_request e o workflow_dispatch entram como apoio, mas o gatilho
+# obrigatorio e o push na main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Token somente-leitura por padrao; nenhum job precisa de escrita.
+permissions:
+  contents: read
+
+# Um push novo cancela a execucao anterior do mesmo ref.
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualidade:
+    name: Qualidade (ESLint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Obter o codigo
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Rodar ESLint
+        run: npm run lint
+
+  testes:
+    name: Testes (Vitest)
+    needs: qualidade
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["20", "22"]
+    steps:
+      - name: Obter o codigo
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Rodar os testes
+        run: npm run test:ci
+
+      - name: Guardar o relatorio JUnit
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: junit-node-${{ matrix.node }}
+          path: test-results/junit.xml
+          retention-days: 7
+
+  auto-analise:
+    name: Auto-analise da pipeline
+    needs: testes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Obter o codigo
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar dependencias
+        run: npm install
+
+      # O projeto analisa o proprio workflow que o esta executando.
+      # `--falhar-em=alta` transforma a analise em barreira de qualidade:
+      # qualquer achado alto ou critico reprova o job.
+      - name: Analisar este workflow
+        run: node src/cli.js .github/workflows/pipeline.yml --falhar-em=alta
+
+      - name: Publicar a analise no resumo do job
+        if: always()
+        run: |
+          echo "## Auto-analise da pipeline" >> "$GITHUB_STEP_SUMMARY"
+          node src/cli.js .github/workflows/pipeline.yml --formato=md \
+            >> "$GITHUB_STEP_SUMMARY"
