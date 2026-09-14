@@ -12,6 +12,9 @@ export default [
       globals: {
         console: 'readonly',
         process: 'readonly',
+        document: 'readonly',
+        localStorage: 'readonly',
+        window: 'readonly',
       },
     },
     rules: {

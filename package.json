@@ -1,7 +1,7 @@
 {
-  "name": "analisador-de-pipelines",
+  "name": "jokenpo-devops",
   "version": "1.0.0",
-  "description": "Analisador de workflows do GitHub Actions: extrai gatilhos, jobs e acoes e aplica regras de qualidade e seguranca",
+  "description": "Jokenpo jogavel no navegador com pipeline de CI/CD no GitHub Actions publicando no GitHub Pages",
   "type": "module",
   "private": true,
   "bin": {
@@ -10,16 +10,17 @@
   "scripts": {
     "test": "vitest run",
     "test:ci": "vitest run --reporter=junit --outputFile=test-results/junit.xml",
-    "lint": "eslint src tests",
+    "lint": "eslint src tests scripts",
     "analisar": "node src/cli.js",
-    "auto-analise": "node src/cli.js .github/workflows/pipeline.yml --formato=md"
+    "auto-analise": "node src/cli.js .github/workflows/pipeline.yml --formato=md",
+    "build": "node scripts/build.mjs"
   },
   "keywords": [
     "devops",
     "github-actions",
     "ci-cd",
-    "pipeline",
-    "analise-estatica"
+    "jokenpo",
+    "jogo"
   ],
   "author": "Dracon-46",
   "license": "MIT",

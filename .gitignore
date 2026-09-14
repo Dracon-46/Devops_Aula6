@@ -3,3 +3,5 @@ test-results/
 coverage/
 .DS_Store
 *.log
+dist/
+jokenpo-aula6.zip

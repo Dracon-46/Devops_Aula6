@@ -101,3 +101,35 @@ jobs:
           echo "## Auto-analise da pipeline" >> "$GITHUB_STEP_SUMMARY"
           node src/cli.js .github/workflows/pipeline.yml --formato=md \
             >> "$GITHUB_STEP_SUMMARY"
+
+  publicar:
+    name: Publicar o jogo
+    needs: auto-analise
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Obter o codigo
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Gerar dist/
+        run: npm run build
+
+      # So publica o que entrou na main; pull request roda tudo menos o deploy.
+      - name: Publicar no GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          commit_message: "deploy: publica o jogo gerado pela pipeline"

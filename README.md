@@ -1,24 +1,22 @@
-# Analisador de Pipelines — Aula 6 de DevOps
+# Jokenpô — Aula 6 de DevOps
 
 [![Pipeline CI](https://github.com/Dracon-46/Devops_Aula6/actions/workflows/pipeline.yml/badge.svg)](https://github.com/Dracon-46/Devops_Aula6/actions/workflows/pipeline.yml)
 
-Projeto da **Tarefa 06**. A tarefa tinha duas partes: integrar uma pipeline que
-rode a cada push na branch principal, e analisar pelo menos tres repositorios do
-GitHub que tenham pipeline, olhando caracteristicas, funcionalidades, gatilhos e
-historico.
+**Jogue:** <https://dracon-46.github.io/Devops_Aula6/>
 
-Em vez de tratar as duas partes como coisas separadas, o projeto e a ferramenta
-que faz a segunda parte: um **analisador estatico de workflows do GitHub
-Actions**. Ele le um arquivo `.yml`, monta um modelo do workflow (gatilhos, jobs,
-encadeamento, matriz, acoes) e aplica dez regras de qualidade e seguranca.
+Pedra, papel ou tesoura jogável no navegador, publicado automaticamente no
+GitHub Pages a cada push na `main`. Clique numa das três jogadas ou use as
+teclas `1`, `2` e `3`.
 
-A analise dos tres repositorios esta em
-**[`docs/analise-repositorios.md`](docs/analise-repositorios.md)** e foi gerada
-rodando esta ferramenta em cima do codigo real do axios, do FastAPI e do Caddy.
+O jogo é a parte visível; o que a disciplina pede está em volta dele — uma
+pipeline que roda a cada push na branch principal, e uma análise de pipelines de
+projetos reais.
+
+---
 
 ## A pipeline
 
-O gatilho obrigatorio da tarefa e o push na `main`:
+Gatilho exigido pela Tarefa 06:
 
 ```yaml
 on:
@@ -29,140 +27,172 @@ on:
   workflow_dispatch:
 ```
 
-Sao tres jobs encadeados com `needs`:
+Quatro jobs encadeados com `needs` — cada um só começa se o anterior passar:
 
 ```text
 push na main
      │
      ▼
 ┌──────────────────┐
-│ qualidade        │  ESLint sobre src/ e tests/
+│ qualidade        │  ESLint
 └────────┬─────────┘
-         │ needs
          ▼
 ┌──────────────────┐
-│ testes           │  matriz Node 20 e 22 · 80 testes · relatorio JUnit
-└────────┬─────────┘  como artefato
-         │ needs
+│ testes           │  matriz Node 20 e 22 · 127 testes · JUnit como artefato
+└────────┬─────────┘
          ▼
 ┌──────────────────┐
-│ auto-analise     │  a ferramenta analisa o PROPRIO workflow
-└──────────────────┘  e publica o resultado no resumo do job
+│ auto-analise     │  a pipeline analisa o próprio workflow
+└────────┬─────────┘
+         ▼
+┌──────────────────┐
+│ publicar         │  build → dist/ → GitHub Pages
+└──────────────────┘
 ```
 
-O terceiro job e o mais interessante: a pipeline roda o analisador sobre o
-`pipeline.yml` que a esta executando, com `--falhar-em=alta`. Se alguem
-introduzir no workflow uma acao sem versao, uma permissao ampla demais ou uma
-interpolacao insegura em `run:`, o proprio job reprova. A ferramenta e a barreira
-de qualidade dela mesma.
+O job `auto-analise` é o detalhe menos comum: o repositório contém um analisador
+de workflows, e a pipeline roda esse analisador **sobre o próprio `pipeline.yml`
+que a está executando**, com `--falhar-em=alta`. Se alguém introduzir no workflow
+uma ação sem versão, uma permissão ampla demais ou uma interpolação insegura em
+`run:`, o job reprova. O relatório vai para o resumo da execução.
 
-Alem disso, o relatorio em Markdown vai para `$GITHUB_STEP_SUMMARY`, entao o
-resumo da execucao no GitHub mostra a tabela de caracteristicas e os achados sem
-precisar abrir log.
+Hoje ele acusa um achado de severidade `media`: a `peaceiris/actions-gh-pages@v4`
+usa tag móvel em vez de SHA fixo. Como não é `alta`, não reprova — fica
+registrado como dívida consciente, e está explicado no documento de análise.
 
-## O que o analisador faz
+---
 
-### Modelo extraido
+## O jogo
 
-Para cada workflow, o parser normaliza:
+Jokenpô tem uma regra pequena o bastante para caber numa tabela, e é justamente
+isso que deixa a lógica 100% pura — nenhuma função de `src/jogo.js` toca no DOM:
 
-- **gatilhos** nas tres formas validas (`on: push`, `on: [a, b]`, `on: { push: {...} }`)
-- **jobs**: id, executor, `needs`, `if`, `timeout-minutes`, `permissions`, matriz
-- **passos**: `uses`, `run`, `with`, `env`
-- **acoes**: dono, repositorio, subcaminho e versao, classificando a referencia
-  em `sha`, `tag`, `branch` ou `nenhuma`, e a origem em oficial, terceiro, local
-  ou docker
+```js
+export const VENCE_DE = { pedra: 'tesoura', papel: 'pedra', tesoura: 'papel' };
 
-Um detalhe que o parser trata de proposito: em YAML 1.1 a chave `on:` sem aspas
-e interpretada como o booleano `true`. O parser aceita as duas formas, e ha teste
-cobrindo isso.
+vencedor('pedra', 'tesoura'); // → 'jogador'
+vencedor('papel', 'tesoura'); // → 'computador'
+vencedor('papel', 'papel');   // → 'empate'
+```
 
-### Regras
+O que impede o jogo de virar puro sorteio é o adversário. Nas três primeiras
+rodadas o computador joga aleatório; da quarta em diante ele conta o histórico,
+descobre qual jogada você mais repete e escolhe exatamente a que ganha dela:
 
-| Regra | Severidade | O que pega |
-| --- | --- | --- |
-| `pull-request-target-perigoso` | critica | `pull_request_target` + checkout da ref do PR |
-| `acao-sem-referencia` | alta | `uses:` sem `@versao` |
-| `acao-presa-a-branch` | alta | acao apontando para `@main` / `@master` |
-| `permissoes-amplas` | alta | `write-all` ou `contents: write` no topo |
-| `injecao-em-run` | alta | titulo/corpo de issue ou PR interpolado no shell |
-| `acao-de-terceiro-sem-sha` | media | acao de terceiro em tag movel |
-| `permissoes-nao-declaradas` | media | sem bloco `permissions` |
-| `job-sem-timeout` | baixa | job sem `timeout-minutes` |
-| `sem-controle-de-concorrencia` | baixa | workflow de push/PR sem `concurrency` |
-| `sem-push-na-principal` | info | nao dispara em push na `main` |
+```js
+jogadaDoComputador(['pedra', 'pedra', 'pedra']); // → 'papel'
+```
 
-As duas regras de severidade alta e critica ligadas a seguranca
-(`pull-request-target-perigoso` e `injecao-em-run`) cobrem as duas falhas mais
-conhecidas de GitHub Actions: executar codigo de fork com token privilegiado, e
-injecao de comando por texto que o atacante controla.
+Quem fica martelando a mesma tecla começa a perder — e dá para ver isso no
+campo **aproveitamento** do placar.
 
-## Uso
+Duas decisões existem só para tornar o jogo testável sem navegador:
+
+- **o sorteio entra por parâmetro** (`jogadaDoComputador(historico, sorteio)`),
+  então o teste fixa exatamente o que o computador vai jogar;
+- **o desempate de `jogadaMaisUsada` é determinístico** — segue a ordem de
+  `JOGADAS` em vez de depender da ordem de chegada.
+
+O placar também é imutável: `registrar` e `jogarRodada` devolvem um estado novo
+em vez de alterar o recebido, o que elimina bug de estado compartilhado e deixa
+os testes diretos.
+
+### Separação
+
+```text
+src/jogo.js   regras puras, sem DOM      →  testado (47 testes)
+src/ui.js     mãos, cliques, teclado     →  não testado, de propósito
+```
+
+`src/ui.js` não conhece nenhuma regra; `src/jogo.js` não sabe que existe uma
+página. É o que permite os testes rodarem dentro do runner, sem navegador.
+
+---
+
+## Análise de pipelines reais
+
+Segunda parte da tarefa: três repositórios reais analisados em
+**[`docs/analise-repositorios.md`](docs/analise-repositorios.md)** — axios,
+FastAPI e Caddy. Cada um foi clonado com histórico completo, teve os workflows
+processados pelo analisador deste repositório, e o histórico saiu de `git log` e
+`git rev-list` sobre `.github/workflows`.
+
+| | axios | fastapi | caddy |
+| --- | --- | --- | --- |
+| Workflows | 8 | 20 | 9 |
+| Jobs no CI principal | 7 | 6 | 3 |
+| Ações fixadas por SHA | 7/7 | 8/8 | 5/5 |
+| Primeiro workflow | 18/06/2020 | 27/11/2019 | 20/03/2020 |
+| Commits em workflows | 145 | 343 | 126 |
+
+---
+
+## O analisador
+
+Ferramenta de linha de comando que lê um workflow `.yml`, monta um modelo
+(gatilhos, jobs, `needs`, matriz, ações) e aplica dez regras:
+
+| Regra | Severidade |
+| --- | --- |
+| `pull_request_target` com checkout da ref do PR | crítica |
+| `uses:` sem `@versao` | alta |
+| ação apontando para `@main` / `@master` | alta |
+| `write-all` ou `contents: write` no topo | alta |
+| título/corpo de issue interpolado em `run:` | alta |
+| ação de terceiro em tag móvel | média |
+| sem bloco `permissions` | média |
+| job sem `timeout-minutes` | baixa |
+| workflow de push/PR sem `concurrency` | baixa |
+| não dispara em push na `main` | info |
 
 ```bash
-npm install
-
-# analise em texto
 node src/cli.js .github/workflows/pipeline.yml
-
-# varios arquivos, saida em Markdown
 node src/cli.js .github/workflows/*.yml --formato=md
-
-# saida estruturada, para processar depois
-node src/cli.js .github/workflows/pipeline.yml --formato=json
-
-# como barreira: sai com codigo 1 se houver achado alto ou pior
 node src/cli.js .github/workflows/pipeline.yml --falhar-em=alta
 ```
 
-Exemplo de saida:
-
-```text
-Workflow: Pipeline CI  (pipeline.yml)
-Gatilhos: push [branches: main], pull_request [branches: main], workflow_dispatch
-Jobs: 3  |  Passos: 14
-Acoes: 3 (3 oficiais, 0 de terceiros, 0 com SHA fixo)
-Encadeamento: testes <- qualidade | auto-analise <- testes
-Matriz: testes
-
-Achados: 0
-```
+---
 
 ## Estrutura
 
 ```text
 Devops_Aula6/
-├── .github/workflows/pipeline.yml   # a pipeline (push na main)
-├── docs/
-│   └── analise-repositorios.md      # Parte 2 da tarefa
+├── .github/workflows/pipeline.yml
+├── docs/analise-repositorios.md   # análise dos 3 repositórios
+├── public/                        # a página do jogo
+│   ├── index.html
+│   └── estilo.css
+├── scripts/build.mjs              # monta dist/ para o Pages
 ├── src/
-│   ├── parser.js                    # YAML -> modelo normalizado
-│   ├── rules.js                     # as dez regras
-│   ├── report.js                    # resumo e formatacao (texto/md)
-│   └── cli.js                       # interface de linha de comando
-├── tests/
-│   ├── parser.test.js               # 43 testes
-│   └── analise.test.js              # 37 testes
-├── eslint.config.mjs
-└── package.json
+│   ├── jogo.js                    # regras do jokenpô (puras)
+│   ├── ui.js                      # mãos, cliques e teclado
+│   ├── parser.js                  # analisador: YAML → modelo
+│   ├── rules.js                   # analisador: as dez regras
+│   ├── report.js                  # analisador: relatório
+│   └── cli.js                     # analisador: linha de comando
+└── tests/
+    ├── jogo.test.js               # 47 testes
+    ├── parser.test.js             # 43 testes
+    └── analise.test.js            # 37 testes
 ```
 
 ## Scripts
 
 ```bash
-npm test          # 80 testes (Vitest)
-npm run test:ci   # testes + relatorio JUnit em test-results/
+npm install
+npm test          # 127 testes
+npm run build     # gera dist/
 npm run lint      # ESLint
-npm run analisar  # atalho para a CLI
 ```
 
-## Limitacao conhecida
+Para abrir o jogo localmente (módulos ES exigem HTTP, não funcionam por
+`file://`):
 
-A regra `sem-push-na-principal` assume que a branch principal se chama `main`.
-Rodando a ferramenta nos tres repositorios reais, todos usam `master` ou branches
-versionadas, e por isso recebem o achado `INFO` indevidamente. O achado esta
-correto para o requisito da disciplina, mas a regra deveria aceitar a branch
-principal como parametro. Fica registrado como proxima melhoria.
+```bash
+npm run build && python3 -m http.server -d dist 4177
+```
+
+---
 
 ## Autor
 
