@@ -1,0 +1,312 @@
+/* Estilo da página do jokenpô. */
+
+:root {
+  color-scheme: dark;
+
+  --fundo: #0f1020;
+  --fundo-alto: #1a1b33;
+  --borda: #2c2e4d;
+  --texto: #eceefb;
+  --texto-fraco: #9aa0c7;
+  --vitoria: #4ade80;
+  --derrota: #fb7185;
+  --empate: #fbbf24;
+  --destaque: #818cf8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+  background:
+    radial-gradient(900px 500px at 50% -10%, #272a55 0%, transparent 70%),
+    var(--fundo);
+  color: var(--texto);
+  font-family:
+    "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  display: flex;
+  justify-content: center;
+}
+
+.pagina {
+  width: 100%;
+  max-width: 620px;
+}
+
+.cabecalho {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: clamp(2.2rem, 8vw, 3rem);
+  letter-spacing: -0.02em;
+}
+
+.subtitulo {
+  margin: 0 auto;
+  max-width: 42ch;
+  color: var(--texto-fraco);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Mesa ------------------------------------------------------------------ */
+
+.mesa {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 18px;
+  background: var(--fundo-alto);
+}
+
+.lado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.rotulo {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--texto-fraco);
+}
+
+.mao {
+  font-size: clamp(2.8rem, 14vw, 4rem);
+  line-height: 1;
+}
+
+.lado:first-child .mao {
+  transform: scaleX(-1);
+}
+
+.versus {
+  color: var(--texto-fraco);
+  font-size: 1.4rem;
+}
+
+.sacudindo {
+  animation: sacudir 0.2s ease-in-out 3;
+}
+
+@keyframes sacudir {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.lado:first-child .sacudindo {
+  animation-name: sacudir-espelhado;
+}
+
+@keyframes sacudir-espelhado {
+  0%,
+  100% {
+    transform: scaleX(-1) translateY(0);
+  }
+  50% {
+    transform: scaleX(-1) translateY(-12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sacudindo {
+    animation: none;
+  }
+}
+
+/* Anúncio --------------------------------------------------------------- */
+
+.anuncio {
+  text-align: center;
+  margin: 20px 0 24px;
+  min-height: 62px;
+}
+
+.resultado {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.resultado[data-resultado="jogador"] {
+  color: var(--vitoria);
+}
+
+.resultado[data-resultado="computador"] {
+  color: var(--derrota);
+}
+
+.resultado[data-resultado="empate"] {
+  color: var(--empate);
+}
+
+.resultado[data-resultado="aguardando"] {
+  color: var(--texto-fraco);
+}
+
+.detalhe {
+  margin: 0;
+  color: var(--texto-fraco);
+  font-size: 0.88rem;
+}
+
+/* Escolhas -------------------------------------------------------------- */
+
+.escolhas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.escolha {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 8px 14px;
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  background: var(--fundo-alto);
+  color: var(--texto);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.escolha:hover,
+.escolha:focus-visible {
+  transform: translateY(-3px);
+  border-color: var(--destaque);
+  outline: none;
+}
+
+.escolha:active {
+  transform: translateY(0);
+}
+
+.escolha .emoji {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.escolha .nome {
+  font-size: 0.9rem;
+}
+
+.escolha .tecla {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 0.7rem;
+  color: var(--texto-fraco);
+}
+
+/* Placar ---------------------------------------------------------------- */
+
+.placar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 24px 0 16px;
+  padding: 16px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  background: var(--fundo-alto);
+}
+
+.marcador {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.marcador .valor {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.marcador .legenda {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--texto-fraco);
+}
+
+.placar.novo-recorde .destaque .valor {
+  color: var(--destaque);
+}
+
+/* Ações e rodapé -------------------------------------------------------- */
+
+.acoes {
+  text-align: center;
+}
+
+.reiniciar {
+  padding: 10px 22px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--texto-fraco);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.reiniciar:hover,
+.reiniciar:focus-visible {
+  color: var(--texto);
+  border-color: var(--destaque);
+  outline: none;
+}
+
+.rodape {
+  margin-top: 32px;
+  text-align: center;
+  color: var(--texto-fraco);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.rodape p {
+  margin: 4px 0;
+}
+
+.rodape a {
+  color: var(--destaque);
+}
+
+.rodape code {
+  background: var(--fundo-alto);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+
+@media (max-width: 420px) {
+  .placar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

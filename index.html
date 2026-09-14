@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jokenpô — Aula 6 de DevOps</title>
+    <meta
+      name="description"
+      content="Jokenpô jogável no navegador, publicado pela pipeline do GitHub Actions."
+    />
+    <link rel="stylesheet" href="estilo.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>%E2%9C%8C%EF%B8%8F</text></svg>"
+    />
+  </head>
+  <body>
+    <main class="pagina">
+      <header class="cabecalho">
+        <h1>Jokenpô</h1>
+        <p class="subtitulo">
+          Pedra, papel ou tesoura. A partir da quarta rodada o computador
+          começa a reparar no que você mais repete.
+        </p>
+      </header>
+
+      <section class="mesa" aria-label="Mesa de jogo">
+        <div class="lado">
+          <span class="rotulo">Você</span>
+          <span class="mao" id="mao-jogador" aria-hidden="true">✊</span>
+        </div>
+        <span class="versus" aria-hidden="true">×</span>
+        <div class="lado">
+          <span class="rotulo">Computador</span>
+          <span class="mao" id="mao-computador" aria-hidden="true">✊</span>
+        </div>
+      </section>
+
+      <section class="anuncio" aria-live="polite">
+        <p class="resultado" id="resultado" data-resultado="aguardando">
+          Escolha sua jogada
+        </p>
+        <p class="detalhe" id="detalhe">O computador começa sorteando.</p>
+      </section>
+
+      <section class="escolhas" aria-label="Sua jogada">
+        <button type="button" class="escolha" data-jogada="pedra">
+          <span class="emoji" aria-hidden="true">✊</span>
+          <span class="nome">Pedra</span>
+          <span class="tecla">1</span>
+        </button>
+        <button type="button" class="escolha" data-jogada="papel">
+          <span class="emoji" aria-hidden="true">✋</span>
+          <span class="nome">Papel</span>
+          <span class="tecla">2</span>
+        </button>
+        <button type="button" class="escolha" data-jogada="tesoura">
+          <span class="emoji" aria-hidden="true">✌️</span>
+          <span class="nome">Tesoura</span>
+          <span class="tecla">3</span>
+        </button>
+      </section>
+
+      <section class="placar" id="placar" aria-label="Placar">
+        <div class="marcador">
+          <span class="valor" id="pontos-jogador">0</span>
+          <span class="legenda">Você</span>
+        </div>
+        <div class="marcador">
+          <span class="valor" id="pontos-computador">0</span>
+          <span class="legenda">Computador</span>
+        </div>
+        <div class="marcador">
+          <span class="valor" id="empates">0</span>
+          <span class="legenda">Empates</span>
+        </div>
+        <div class="marcador">
+          <span class="valor" id="rodadas">0</span>
+          <span class="legenda">Rodadas</span>
+        </div>
+        <div class="marcador">
+          <span class="valor" id="aproveitamento">0%</span>
+          <span class="legenda">Aproveitamento</span>
+        </div>
+        <div class="marcador destaque">
+          <span class="valor" id="recorde">0</span>
+          <span class="legenda">Recorde</span>
+        </div>
+      </section>
+
+      <div class="acoes">
+        <button type="button" class="reiniciar" id="reiniciar">
+          Zerar placar
+        </button>
+      </div>
+
+      <footer class="rodape">
+        <p>
+          Publicado automaticamente pela pipeline do GitHub Actions a cada push
+          na <code>main</code>.
+        </p>
+        <p>
+          <a href="https://github.com/Dracon-46/Devops_Aula6">
+            Código e documentação no GitHub
+          </a>
+        </p>
+      </footer>
+    </main>
+
+    <script type="module" src="ui.js"></script>
+  </body>
+</html>
